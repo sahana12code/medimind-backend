@@ -1,4 +1,5 @@
 from datetime import datetime, date, time
+
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, Time
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,10 +18,22 @@ class User(Base):
     medical_condition: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    caregivers: Mapped[list["Caregiver"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    medicines: Mapped[list["Medicine"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    reminders: Mapped[list["Reminder"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    adherence_logs: Mapped[list["AdherenceLog"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    caregivers: Mapped[list["Caregiver"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    medicines: Mapped[list["Medicine"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    reminders: Mapped[list["Reminder"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    adherence_logs: Mapped[list["AdherenceLog"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
 
 class Caregiver(Base):
@@ -50,8 +63,14 @@ class Medicine(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user: Mapped["User"] = relationship(back_populates="medicines")
-    reminders: Mapped[list["Reminder"]] = relationship(back_populates="medicine", cascade="all, delete-orphan")
-    adherence_logs: Mapped[list["AdherenceLog"]] = relationship(back_populates="medicine", cascade="all, delete-orphan")
+    reminders: Mapped[list["Reminder"]] = relationship(
+        back_populates="medicine",
+        cascade="all, delete-orphan",
+    )
+    adherence_logs: Mapped[list["AdherenceLog"]] = relationship(
+        back_populates="medicine",
+        cascade="all, delete-orphan",
+    )
 
 
 class Reminder(Base):
@@ -70,7 +89,10 @@ class Reminder(Base):
 
     user: Mapped["User"] = relationship(back_populates="reminders")
     medicine: Mapped["Medicine"] = relationship(back_populates="reminders")
-    adherence_logs: Mapped[list["AdherenceLog"]] = relationship(back_populates="reminder", cascade="all, delete-orphan")
+    adherence_logs: Mapped[list["AdherenceLog"]] = relationship(
+        back_populates="reminder",
+        cascade="all, delete-orphan",
+    )
 
 
 class AdherenceLog(Base):
@@ -80,11 +102,22 @@ class AdherenceLog(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     medicine_id: Mapped[int] = mapped_column(ForeignKey("medicines.id"), nullable=False)
     reminder_id: Mapped[int] = mapped_column(ForeignKey("reminders.id"), nullable=False)
+
     scheduled_for: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    # NEW: actual due time backend should use for reminder evaluation
+    effective_due_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # NEW: if user snoozes, store the postponed due time here
+    snoozed_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
     status: Mapped[str] = mapped_column(String(20), default="pending")
     taken_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     snooze_count: Mapped[int] = mapped_column(Integer, default=0)
     caregiver_alert_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # NEW: track when caregiver alert was sent
+    alert_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="adherence_logs")
     medicine: Mapped["Medicine"] = relationship(back_populates="adherence_logs")
